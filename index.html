@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>쓰담 (SSEDAM) - 우리 가족 공동 양육의 시작</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Babel for JSX transformation in browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Import Map for React modules -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.460.0?deps=react@18.2.0"
+      }
+    }
+    </script>
+
+    <style>
+      body {
+        font-family: 'Noto Sans KR', sans-serif;
+        background-color: #FFF7ED; /* Warm Orange/Cream background */
+      }
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .no-scrollbar::-webkit-scrollbar {
+          display: none;
+      }
+      /* Hide scrollbar for IE, Edge and Firefox */
+      .no-scrollbar {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+      }
+      
+      /* Animation Utilities */
+      @keyframes blob {
+        0% { transform: translate(0px, 0px) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+        100% { transform: translate(0px, 0px) scale(1); }
+      }
+      .animate-blob {
+        animation: blob 7s infinite;
+      }
+      .animation-delay-2000 {
+        animation-delay: 2s;
+      }
+      .animation-delay-4000 {
+        animation-delay: 4s;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+      import React, { useState, useEffect } from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { 
+        ArrowRight, Bell, Menu, X, XCircle, CheckCircle, 
+        Users, Award, MapPin, NotebookPen, Coins, BookHeart, 
+        UserPlus, Store, Mail, ArrowUp 
+      } from 'lucide-react';
+
+      /**
+       * Components
+       */
+
+      // --- Button Component ---
+      const Button = ({ 
+        children, 
+        onClick, 
+        variant = 'primary', 
+        fullWidth = false, 
+        className = '' 
+      }) => {
+        const baseStyles = "py-3.5 px-6 rounded-full font-bold transition-all duration-300 transform active:scale-95 shadow-md flex items-center justify-center gap-2";
+        
+        const variants = {
+          primary: "bg-orange-500 text-white hover:bg-orange-600 shadow-orange-200",
+          secondary: "bg-white text-orange-600 hover:bg-orange-50 border border-orange-100",
+          outline: "border-2 border-orange-500 text-orange-600 hover:bg-orange-50"
+        };
+
+        return (
+          <button 
+            onClick={onClick}
+            className={`${baseStyles} ${variants[variant]} ${fullWidth ? 'w-full' : ''} ${className}`}
+          >
+            {children}
+          </button>
+        );
+      };
+
+      // --- SectionTitle Component ---
+      const SectionTitle = ({ title, subtitle, align = 'center', light = false }) => {
+        return (
+          <div className={`mb-10 ${align === 'center' ? 'text-center' : 'text-left'}`}>
+            {subtitle && (
+              <span className={`inline-block mb-2 text-sm font-bold tracking-wider uppercase ${light ? 'text-orange-200' : 'text-orange-600'}`}>
+                {subtitle}
+              </span>
+            )}
+            <h2 className={`text-3xl md:text-4xl font-extrabold leading-tight ${light ? 'text-white' : 'text-gray-900'}`}>
+              {title.split('\n').map((line, i) => (
+                <React.Fragment key={i}>
+                  {line}
+                  {i < title.split('\n').length - 1 && <br />}
+                </React.Fragment>
+              ))}
+            </h2>
+          </div>
+        );
+      };
+
+      // --- StickyHeader Component ---
+      const StickyHeader = () => {
+        const [scrolled, setScrolled] = useState(false);
+        const [menuOpen, setMenuOpen] = useState(false);
+
+        useEffect(() => {
+          const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+          };
+          window.addEventListener('scroll', handleScroll);
+          return () => window.removeEventListener('scroll', handleScroll);
+        }, []);
+
+        const navItems = [
+          { label: '쓰담 소개', id: 'problem' },
+          { label: '주요 기능', id: 'features' },
+          { label: '사용 예시', id: 'scenario' },
+        ];
+
+        const handleNavClick = (id) => {
+          setMenuOpen(false);
+          document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        return (
+          <>
+            <header 
+              className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+                scrolled || menuOpen ? 'bg-white/95 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'
+              }`}
+            >
+              <div className="max-w-md mx-auto px-6 flex justify-between items-center">
+                <div 
+                  className="font-black text-2xl text-orange-500 cursor-pointer"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                >
+                  SSEDAM
+                </div>
+                <button 
+                  className="p-2 text-gray-800"
+                  onClick={() => setMenuOpen(!menuOpen)}
+                >
+                  {menuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+              </div>
+            </header>
+
+            {/* Mobile Menu Overlay */}
+            {menuOpen && (
+              <div className="fixed inset-0 z-40 bg-white pt-24 px-6 animate-in fade-in slide-in-from-top-10 duration-200">
+                <nav className="flex flex-col gap-6 text-xl font-bold text-gray-800">
+                  {navItems.map((item) => (
+                    <button 
+                      key={item.id} 
+                      onClick={() => handleNavClick(item.id)}
+                      className="text-left py-2 border-b border-gray-100 hover:text-orange-500 transition-colors"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                  <button 
+                    onClick={() => {
+                      setMenuOpen(false);
+                      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    }}
+                    className="mt-4 bg-orange-500 text-white py-4 rounded-xl text-center shadow-lg active:scale-95 transition-transform"
+                  >
+                    사전 알림 신청하기
+                  </button>
+                </nav>
+              </div>
+            )}
+          </>
+        );
+      };
+
+      // --- HeroSection Component ---
+      const HeroSection = ({ onCtaClick }) => {
+        return (
+          <section className="relative w-full min-h-[90vh] flex flex-col justify-center items-center bg-gradient-to-br from-orange-50 to-amber-100 overflow-hidden px-6 pt-20 pb-10">
+            
+            {/* Abstract Background Shapes */}
+            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+            <div className="absolute top-[20%] left-[-10%] w-72 h-72 bg-amber-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+            <div className="absolute bottom-[-10%] left-[20%] w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+
+            <div className="relative z-10 max-w-md w-full text-center flex flex-col items-center">
+              <div className="mb-6 inline-flex items-center px-3 py-1 rounded-full bg-orange-100 border border-orange-200 text-orange-700 text-xs font-bold uppercase tracking-wide">
+                <span className="mr-1">🚀</span> Coming Soon
+              </div>
+
+              <h1 className="text-4xl md:text-5xl font-black text-gray-900 leading-[1.2] mb-6">
+                우리 가족이<br />
+                <span className="text-orange-500">함께 키우는</span> 강아지,<br />
+                동네와 연결되다
+              </h1>
+
+              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                기록이 쌓이면 보상이 되고<br />
+                보상은 다시 우리 동네로 돌아옵니다.
+              </p>
+
+              <div className="w-full flex flex-col gap-3">
+                <Button fullWidth onClick={onCtaClick}>
+                  <Bell size={18} />
+                  앱 출시 알림 받기
+                </Button>
+                <button className="text-sm text-gray-500 underline mt-2" onClick={() => {
+                  document.getElementById('problem')?.scrollIntoView({ behavior: 'smooth' });
+                }}>
+                  쓰담이 뭔가요?
+                </button>
+              </div>
+
+              <div className="mt-12 relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border-4 border-white rotate-1 hover:rotate-0 transition-transform duration-500">
+                 {/* Placeholder for a heartwarming dog & family image */}
+                 <img 
+                  src="https://picsum.photos/800/600?random=1" 
+                  alt="Family with dog" 
+                  className="w-full h-full object-cover"
+                />
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      // --- ProblemSection Component ---
+      const ProblemSection = () => {
+        return (
+          <section id="problem" className="py-20 px-6 bg-white">
+            <div className="max-w-md mx-auto">
+              <SectionTitle 
+                title="왜 쓰담인가요?" 
+                subtitle="PROBLEM & SOLUTION"
+              />
+
+              <div className="space-y-6">
+                {/* Problem Card */}
+                <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span className="text-red-500 text-2xl">🙁</span>
+                    기존의 반려견 양육
+                  </h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3 text-gray-600">
+                      <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                      <span>나 혼자 책임지는 독박 케어</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-600">
+                      <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                      <span>기록은 하지만 돌아오는 보상이 없음</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-600">
+                      <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                      <span>지역 사회와 단절된 고립된 생활</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex justify-center text-orange-400">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4L12 20M12 20L5 13M12 20L19 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+
+                {/* Solution Card */}
+                <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100 shadow-lg relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-orange-200 rounded-full mix-blend-multiply filter blur-2xl opacity-50 translate-x-10 -translate-y-10"></div>
+                  
+                  <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2 relative z-10">
+                    <span className="text-2xl">🐶</span>
+                    쓰담은 이렇게 바꿉니다
+                  </h3>
+                  <ul className="space-y-3 relative z-10">
+                    <li className="flex items-start gap-3 text-gray-800 font-medium">
+                      <CheckCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                      <span>가족 모두가 함께 기록하고 공유</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-800 font-medium">
+                      <CheckCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                      <span>기록이 쌓이면 실질적인 보상으로</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-800 font-medium">
+                      <CheckCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                      <span>우리 동네 가게들과 연결되는 상생</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      // --- ValueSection Component ---
+      const ValueSection = () => {
+        const values = [
+          {
+            icon: <Users className="w-8 h-8 text-white" />,
+            title: "공동 양육",
+            desc: "가족 모두가 참여하는\n강아지 케어 프로젝트",
+            color: "bg-blue-500"
+          },
+          {
+            icon: <Award className="w-8 h-8 text-white" />,
+            title: "기록의 가치화",
+            desc: "매일의 일상이 포인트가 되고\n소중한 추억이 됩니다",
+            color: "bg-orange-500"
+          },
+          {
+            icon: <MapPin className="w-8 h-8 text-white" />,
+            title: "지역 상생",
+            desc: "쌓인 포인트는\n우리 동네 상점에서 사용해요",
+            color: "bg-green-500"
+          }
+        ];
+
+        return (
+          <section className="py-20 px-6 bg-orange-50">
+            <div className="max-w-md mx-auto">
+              <SectionTitle title="쓰담의 핵심 가치" subtitle="CORE VALUES" />
+              
+              <div className="grid gap-6">
+                {values.map((item, index) => (
+                  <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-5 hover:shadow-md transition-shadow">
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg ${item.color}`}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">{item.title}</h3>
+                      <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      // --- FeatureSection Component ---
+      const FeatureSection = () => {
+        const features = [
+          {
+            title: "가족 공동 케어 기록",
+            desc: "산책, 식사, 배변, 병원 기록을 가족이 함께해요. 누가 얼마나 참여했는지 확인하고 서로 응원할 수 있어요.",
+            icon: <NotebookPen className="w-6 h-6 text-indigo-600" />,
+            bg: "bg-indigo-50",
+            image: "https://picsum.photos/400/250?random=10"
+          },
+          {
+            title: "쓰담 포인트",
+            desc: "꾸준히 케어하면 포인트가 쌓여요. 적립된 포인트는 동네 미용실, 병원, 카페에서 현금처럼 사용할 수 있어요.",
+            icon: <Coins className="w-6 h-6 text-amber-600" />,
+            bg: "bg-amber-50",
+            image: "https://picsum.photos/400/250?random=11"
+          },
+          {
+            title: "강아지 다이어리",
+            desc: "기록에 사진을 더해보세요. 시간이 지나면 우리 강아지의 성장 앨범이 되어 추억을 선물합니다.",
+            icon: <BookHeart className="w-6 h-6 text-pink-600" />,
+            bg: "bg-pink-50",
+            image: "https://picsum.photos/400/250?random=12"
+          },
+          {
+            title: "강아지 친구 맺기",
+            desc: "우리 동네 강아지 친구들을 만나보세요. 온라인에서 시작해 오프라인 산책 모임으로 이어져요.",
+            icon: <UserPlus className="w-6 h-6 text-green-600" />,
+            bg: "bg-green-50",
+            image: "https://picsum.photos/400/250?random=13"
+          },
+          {
+            title: "우리동네 커뮤니티",
+            desc: "견종별, 관심사별 모임부터 전문가 상담까지. 지역 기반의 따뜻한 커뮤니티를 경험해보세요.",
+            icon: <Store className="w-6 h-6 text-blue-600" />,
+            bg: "bg-blue-50",
+            image: "https://picsum.photos/400/250?random=14"
+          }
+        ];
+
+        return (
+          <section className="py-20 px-6 bg-white">
+            <div className="max-w-md mx-auto">
+              <SectionTitle title="주요 기능 소개" subtitle="KEY FEATURES" />
+
+              <div className="space-y-12">
+                {features.map((feature, idx) => (
+                  <div key={idx} className="group">
+                    <div className="relative rounded-2xl overflow-hidden mb-4 shadow-md aspect-[16/9]">
+                      <img src={feature.image} alt={feature.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+                      <div className={`absolute top-4 left-4 p-2 rounded-lg ${feature.bg} shadow-sm backdrop-blur-sm bg-opacity-90`}>
+                        {feature.icon}
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{feature.title}</h3>
+                    <p className="text-gray-600 leading-relaxed">{feature.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      // --- ScenarioSection Component ---
+      const ScenarioSection = () => {
+        return (
+          <section className="py-20 px-6 bg-gray-900 text-white relative overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
+              <div className="absolute top-10 left-10 w-40 h-40 bg-orange-500 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-10 right-10 w-60 h-60 bg-blue-500 rounded-full blur-3xl"></div>
+            </div>
+
+            <div className="max-w-md mx-auto relative z-10">
+              <SectionTitle 
+                title="이렇게 쓰이게 됩니다" 
+                subtitle="SCENARIO"
+                light
+              />
+
+              <div className="relative border-l-2 border-gray-700 pl-8 ml-4 space-y-12">
+                
+                {/* Step 1 */}
+                <div className="relative">
+                  <span className="absolute -left-[41px] top-0 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 ring-4 ring-gray-900">
+                    <span className="text-xs font-bold">1</span>
+                  </span>
+                  <div className="bg-gray-800 p-5 rounded-xl border border-gray-700">
+                    <p className="text-orange-300 text-sm font-bold mb-1">오늘 아침</p>
+                    <h4 className="text-lg font-bold mb-2">아빠가 산책 기록 🐕</h4>
+                    <p className="text-gray-400 text-sm">"오늘 뽀삐랑 30분 산책 완료! 냄새 맡기를 좋아하네."</p>
+                  </div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="relative">
+                   <span className="absolute -left-[41px] top-0 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 ring-4 ring-gray-900">
+                    <span className="text-xs font-bold">2</span>
+                  </span>
+                  <div className="bg-gray-800 p-5 rounded-xl border border-gray-700">
+                    <p className="text-orange-300 text-sm font-bold mb-1">오늘 점심</p>
+                    <h4 className="text-lg font-bold mb-2">엄마가 식사/영양제 기록 💊</h4>
+                    <p className="text-gray-400 text-sm">"관절 영양제 급여함. 밥도 한 그릇 뚝딱!"</p>
+                  </div>
+                </div>
+
+                {/* Step 3 */}
+                <div className="relative">
+                   <span className="absolute -left-[41px] top-0 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 ring-4 ring-gray-900">
+                    <span className="text-xs font-bold">3</span>
+                  </span>
+                  <div className="bg-gray-800 p-5 rounded-xl border border-gray-700">
+                    <p className="text-orange-300 text-sm font-bold mb-1">오늘 저녁</p>
+                    <h4 className="text-lg font-bold mb-2">딸이 귀여운 사진 업로드 📸</h4>
+                    <p className="text-gray-400 text-sm">"자는 모습이 너무 천사 같아... 찰칵! 갤러리에 저장."</p>
+                  </div>
+                </div>
+
+                {/* Result */}
+                <div className="relative">
+                   <span className="absolute -left-[41px] top-0 flex h-6 w-6 items-center justify-center rounded-full bg-green-500 ring-4 ring-gray-900">
+                    <span className="text-xs font-bold">★</span>
+                  </span>
+                  <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-6 rounded-xl shadow-lg transform scale-105 origin-left">
+                    <p className="text-white text-sm font-bold mb-1 opacity-90">한 달 후</p>
+                    <h4 className="text-xl font-bold mb-2 text-white">동네 미용실 포인트 결제! 🎉</h4>
+                    <p className="text-white text-sm opacity-90">
+                      가족이 모은 포인트로 동네 '쓰담 미용실' 할인 혜택을 받았어요.
+                      <br /><br />
+                      <span className="font-semibold text-yellow-200">"기록은 추억이 되고, 동네는 더 따뜻해집니다."</span>
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      // --- Footer Component ---
+      const Footer = ({ onCtaClick }) => {
+        const [email, setEmail] = useState('');
+        const [submitted, setSubmitted] = useState(false);
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          if(email) {
+            setSubmitted(true);
+            setTimeout(() => setSubmitted(false), 3000);
+            setEmail('');
+          }
+        };
+
+        const scrollToTop = () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        return (
+          <footer className="bg-gray-50 pt-20 pb-24 px-6 border-t border-gray-200 relative">
+            <div className="max-w-md mx-auto text-center">
+              
+              <div className="mb-12">
+                <h2 className="text-3xl font-black text-gray-900 mb-4">
+                  쓰담과 함께<br />
+                  시작해볼까요?
+                </h2>
+                <p className="text-gray-600 mb-8">
+                  가장 먼저 쓰담을 만나보세요.<br />
+                  출시 소식을 가장 먼저 알려드립니다.
+                </p>
+                
+                {submitted ? (
+                  <div className="p-4 bg-green-100 text-green-700 rounded-xl font-bold animate-pulse">
+                    성공적으로 신청되었습니다! 🐶
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                    <input 
+                      type="email" 
+                      placeholder="이메일을 입력해주세요" 
+                      className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                    <Button fullWidth onClick={() => {}}>
+                      사전 알림 신청하기
+                    </Button>
+                  </form>
+                )}
+              </div>
+
+              <div className="border-t border-gray-200 pt-8 text-left">
+                <h3 className="font-black text-xl text-gray-400 mb-4">SSEDAM</h3>
+                <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                  (주)쓰담 | 대표: 홍길동 | 사업자등록번호: 000-00-00000<br />
+                  서울시 강남구 테헤란로 123
+                </p>
+                <div className="flex gap-4 text-gray-400 text-sm">
+                  <a href="#" className="hover:text-gray-600">이용약관</a>
+                  <a href="#" className="hover:text-gray-600">개인정보처리방침</a>
+                </div>
+                <p className="mt-8 text-xs text-gray-300">
+                  © 2024 SSEDAM. All rights reserved.
+                </p>
+              </div>
+            </div>
+            
+            {/* Scroll to Top Button */}
+            <button 
+              onClick={scrollToTop}
+              className="absolute bottom-6 right-6 p-3 bg-white border border-gray-200 shadow-lg rounded-full text-gray-600 hover:text-orange-500 transition-colors"
+            >
+              <ArrowUp size={20} />
+            </button>
+          </footer>
+        );
+      };
+
+      // --- StickyBottomCta Component ---
+      const StickyBottomCta = ({ onCtaClick }) => {
+        const [visible, setVisible] = React.useState(false);
+
+        React.useEffect(() => {
+          const handleScroll = () => {
+            // Show button after scrolling past 500px
+            setVisible(window.scrollY > 500);
+          };
+          window.addEventListener('scroll', handleScroll);
+          return () => window.removeEventListener('scroll', handleScroll);
+        }, []);
+
+        if (!visible) return null;
+
+        return (
+          <div className="fixed bottom-6 left-0 w-full px-6 z-40 md:hidden pointer-events-none">
+            <div className="max-w-md mx-auto pointer-events-auto shadow-2xl rounded-full">
+              <button 
+                onClick={onCtaClick}
+                className="w-full bg-gray-900 text-white font-bold py-4 rounded-full shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"
+              >
+                <span>🚀</span> 앱 출시 알림 받기
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      // --- App Component ---
+      const App = () => {
+        const handleCtaClick = () => {
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: 'smooth'
+          });
+        };
+
+        return (
+          <div className="min-h-screen font-sans text-gray-900 selection:bg-orange-200 selection:text-orange-900">
+            <StickyHeader />
+            
+            <main className="w-full">
+              <div id="hero">
+                <HeroSection onCtaClick={handleCtaClick} />
+              </div>
+              
+              <ProblemSection />
+              
+              <div id="values">
+                <ValueSection />
+              </div>
+              
+              <div id="features">
+                <FeatureSection />
+              </div>
+              
+              <div id="scenario">
+                <ScenarioSection />
+              </div>
+            </main>
+
+            <Footer onCtaClick={handleCtaClick} />
+
+            {/* Sticky Bottom CTA for Mobile (only appears when scrolled past hero) */}
+            <StickyBottomCta onCtaClick={handleCtaClick} />
+          </div>
+        );
+      };
+
+      // --- Rendering ---
+      const root = createRoot(document.getElementById('root'));
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+    </script>
+  </body>
+</html>
